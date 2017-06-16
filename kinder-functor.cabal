@@ -1,0 +1,26 @@
+name: kinder-functor
+version: 0.1.0.0
+synopsis: An alternate Functor definition
+homepage: http://github.com/rampion/kinder-functor
+license: PublicDomain
+author: Noah Luck Easterly
+maintainer: noah.easterly@gmail.com
+build-type: Simple
+extra-source-files: ChangeLog.md, README.md, Kinder/Functor.lhs
+cabal-version: >=1.10
+
+library
+  exposed-modules: Kinder.Functor
+  build-depends: base >=4.9 && <4.10
+               , markdown-unlit >=0.4.0 && <0.5
+  default-language: Haskell2010
+  ghc-options: -pgmL markdown-unlit -Wall -Werror
+
+test-suite doctests
+  type: exitcode-stdio-1.0
+  main-is: doctests.hs
+  build-depends: base
+               , markdown-unlit >=0.4.0 && <0.5
+               , doctest >=0.11.2 && <0.12
+  ghc-options: -Wall -Werror
+  default-language: Haskell2010
