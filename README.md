@@ -525,8 +525,9 @@ for any `Category`, which makes it a great opportunity to use the `DefaultSignat
       default contramap :: (f ~ Cat j, k ~ j -> Type) => Cat j a b -> Natural (->) (f b) (f a)
       contramap h = Natural (.h)
 
-However this doesn't compile in `ghc-8.0.2`; while `DefaultSignatures` lets us specialize
-over other constraints, it doesn't (yet?) allow us to specialize kinds.
+However this doesn't compile in `ghc-8.0.2` [due to limitations in the type
+system](https://github.com/rampion/kinder-functor/issues/1), though this may be
+possible in a future version of GHC.
 
 # Literate Haskell
 
