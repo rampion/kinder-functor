@@ -11,8 +11,10 @@ cabal-version: >=1.10
 
 library
   exposed-modules: Kinder.Functor
+  other-modules: Kmett
   build-depends: base >=4.9 && <4.10
                , markdown-unlit >=0.4.0 && <0.5
+               , constraints >=0.9.1 && <0.10
   default-language: Haskell2010
   ghc-options: -pgmL markdown-unlit -Wall -Werror
 
@@ -21,6 +23,7 @@ test-suite doctests
   main-is: doctests.hs
   build-depends: base
                , markdown-unlit >=0.4.0 && <0.5
+               , constraints >=0.9.1 && <0.10
                , doctest >=0.11.2 && <0.12
   ghc-options: -Wall -Werror
   default-language: Haskell2010
