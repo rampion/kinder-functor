@@ -466,7 +466,7 @@ categorical definition of `Functor`" in the
 [`categories`](http://hackage.haskell.org/package/categories-1.0.7/docs/Control-Categorical-Functor.html)
 package:
 
-    class (Category r, Category t) => Functor f r t | f r -> t, f t -> r where
+    class (Category r, Category t) => Functor r t f | f r -> t, f t -> r where
       fmap :: r a b -> t (f a) (f b)
 
 This typeclass obviates the need for a `Contravariant` class, as you can just choose
@@ -476,6 +476,9 @@ flip the direction of the first category:
 
     contramap :: Contravariant r t f => r a b -> t (f b) (f a)
     contramap = fmap . Opp
+
+    lmap :: Contravariant r (Natural t) f => r a b -> t (f b x) (f a x)
+    lmap = runNatural . contramap
 
     newtype Opp cat a b = Opp { runOpp :: cat b a }
 
@@ -492,6 +495,17 @@ flip the direction of the first category:
 In order to define a `Contravariant` in terms of our definition of `Functor`,
 we'd need the ability to define values of types of kind other than than `*`,
 which Haskell doesn't yet support.
+
+(I actually tweaked `categories`' `Functor` definition very slightly - I made
+it polykinded by just enablying `PolyKinds` and I permuted the parameter order
+to make definining something like `Profunctor` easier)
+
+    type Profunctor r s t f = (Contravariant r (Natural t) f, ForallF (Functor s t) f)
+
+    dimap :: Profunctor r s t f => r a b -> s c d -> t (f b c) (f a d)
+    dimap = case instF of Sub d -> go d
+      where go :: (Contravariant r (Natural t) f) => Dict (Functor s t (f a)) -> r a b -> s c d -> t (f b c) (f a d)
+            go Dict f g = fmap g . lmap f
 
 ## Categories and `DefaultSignatures`
 
