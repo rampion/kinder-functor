@@ -499,17 +499,17 @@ You might have noticed that `(->)`, `Compose`, and `CNat`, all of which have `Ca
 all have identitical instances of `Functor` and `Contravariant`.  In fact, this will be true
 for any `Category`, which makes it a great opportunity to use the `DefaultSignatures` language extension:
 
-  class (Category (Cat j), Category (Cat k)) => Functor (f :: j -> k) where
-    fmap :: Cat j a b -> Cat k (f a) (f b)
+    class (Category (Cat j), Category (Cat k)) => Functor (f :: j -> k) where
+      fmap :: Cat j a b -> Cat k (f a) (f b)
 
-    default fmap :: (f ~ Cat j x, k ~ Type) => Cat j a b -> Cat j x a -> Cat j x b
-    fmap = (.)
+      default fmap :: (f ~ Cat j x, k ~ Type) => Cat j a b -> Cat j x a -> Cat j x b
+      fmap = (.)
 
-  class (Category (Cat j), Category (Cat k)) => Contravariant (f :: j -> k) where
-    contramap :: Cat j a b -> Cat k (f b) (f a)
+    class (Category (Cat j), Category (Cat k)) => Contravariant (f :: j -> k) where
+      contramap :: Cat j a b -> Cat k (f b) (f a)
 
-    default contramap :: (f ~ Cat j, k ~ j -> Type) => Cat j a b -> Natural (->) (f b) (f a)
-    contramap h = Natural (.h)
+      default contramap :: (f ~ Cat j, k ~ j -> Type) => Cat j a b -> Natural (->) (f b) (f a)
+      contramap h = Natural (.h)
 
 However this doesn't compile in `ghc-8.0.2`; while `DefaultSignatures` lets us specialize
 over other constraints, it doesn't (yet?) allow us to specialize kinds.
