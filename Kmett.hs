@@ -5,6 +5,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE MonoLocalBinds #-} -- Kills a warning in 8.2
 module Kmett where
 
 import Prelude hiding ((.), id, Functor(fmap))
