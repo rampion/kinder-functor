@@ -256,7 +256,7 @@ instance Functor Natural where
 `Natural` gives us an alternate destination category for `fmap`, one that lets us
 map over non-terminal parameters of a parameterized type. 
 
-But our definition of `Functor` also allows us to choose an an alternate source
+But our definition of `Functor` also allows us to choose an alternate source
 category for `fmap`, so we're not limited to parameters of kind `*`.
 
 We saw this for some of the `Functor` instances for `Compose` and `Natural` itself, but
