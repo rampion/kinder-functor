@@ -10,11 +10,13 @@ Since this is a literate haskell file, we need to specify all our language exten
 ```haskell
 {-# LANGUAGE TypeInType #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE PackageImports #-}
+{-# LANGUAGE DefaultSignatures #-}
 module Kinder.Functor where
 ```
 
@@ -31,6 +33,12 @@ kind (and its synonym `Type`) into scope.
 
 ```haskell
 import "base" Data.Kind (Type, type (*))
+```
+
+We also import `Data.Type.Equality` to get heterogeneous equality.
+
+```haskell
+import "base" Data.Type.Equality (type (~~))
 ```
 
 The rest of the imports are just for some example Functor instances.
@@ -58,6 +66,9 @@ arrows in `Cat j` to arrows in `Cat k`:
 ```haskell
 class (Category (Cat j), Category (Cat k)) => Functor (f :: j -> k) where
   fmap :: Cat j a b -> Cat k (f a) (f b)
+
+  default fmap :: f ~~ Cat j x => Cat j a b -> Cat k (f a) (f b)
+  fmap = (.)
 ```
 
 # Backwards compatibility with Prelude
@@ -129,8 +140,7 @@ instance Functor (Either x) where
 >>> fmap (+1) (+2) 3
 6
 -}
-instance Functor ((->) x) where
-  fmap = (.)
+instance Functor ((->) x)
 
 {-|-----------------------------------------------------------------------------
 >>> import Data.Char (toUpper)
@@ -175,7 +185,7 @@ So now we can define additional `Functor` instances for `(,)` and `Either`
 that operate on the first parameter:
 
 ```haskell
-fmap1 :: (Category (Cat j), Category (Cat k), Functor f) => Cat j a b -> Cat k (f a x) (f b x)
+fmap1 :: Functor f => Cat j a b -> Cat k (f a x) (f b x)
 fmap1 = runNatural . fmap
 
 {-|-----------------------------------------------------------------------------
@@ -208,7 +218,7 @@ Compose [Just 'h',Just 'w']
 instance Functor f => Functor (Compose f) where
   fmap h = Natural $ Compose . fmap (runNatural h) . getCompose
 
-fmap2 :: (Category (Cat j), Category (Cat k), Functor f) => Cat j a b -> Cat k (f a x y) (f b x y)
+fmap2 :: Functor f => Cat j a b -> Cat k (f a x y) (f b x y)
 fmap2 = runNatural . fmap1
 
 {-|-----------------------------------------------------------------------------
@@ -231,8 +241,7 @@ its last parameter.
 fmap (Natural maybeToList) (Natural rightToMay)
   :: Natural (->) (Either t) []
 -}
-instance (Category cat, Cat k ~ cat) => Functor (Natural cat f) where
-  fmap = (.)
+instance (Category cat, Cat k ~ cat) => Functor (Natural cat f)
 ```
 
 It's also a functor over its first parameter, i.e. we can alter the category.
@@ -361,8 +370,7 @@ fmap minus2 plus3 :: CPeano m ('Succ m)
 fmap plus3 minus2
   :: CPeano ('Succ ('Succ n)) ('Succ ('Succ ('Succ n)))
 -}
-instance Functor (CPeano m) where
-  fmap = (.)
+instance Functor (CPeano m)
 ```
 
 # Contravariant functors, profunctors, and bifunctors
@@ -374,6 +382,9 @@ it from one category to another.
 ```haskell
 class (Category (Cat j), Category (Cat k)) => Contravariant (f :: j -> k) where
   contramap :: Cat j a b -> Cat k (f b) (f a)
+
+  default contramap :: f ~~ Cat j => Cat j a b -> Cat k (f b) (f a)
+  contramap h = Natural (.h)
 ```
 
 `(->)`, `Natural cat` and `CPeano` all have `Contravariant` instances that
@@ -388,8 +399,7 @@ lmap = runNatural . contramap
 >>> :t lmap show length
 lmap show length :: Show a => a -> Int
 -}
-instance Contravariant (->) where
-  contramap h = Natural (.h)
+instance Contravariant (->)
 
 {-|-----------------------------------------------------------------------------
 >>> import Data.Maybe (maybeToList)
@@ -398,8 +408,7 @@ instance Contravariant (->) where
 lmap (Natural rightToMay) (Natural maybeToList)
   :: Natural (->) (Either t) []
 -}
-instance (Category cat, Cat k ~ cat) => Contravariant (Natural cat) where
-  contramap h = Natural (.h)
+instance (Category cat, Cat k ~ cat) => Contravariant (Natural cat)
 
 {-|-----------------------------------------------------------------------------
 >>> let minus2 = CPred (CPred CId)
@@ -414,8 +423,7 @@ lmap minus2 plus3
 >>> :t lmap plus3 minus2
 lmap plus3 minus2 :: CPeano a ('Succ a)
 -}
-instance Contravariant CPeano where
-  contramap h = Natural (.h)
+instance Contravariant CPeano
 ```
 
 Of course, there's a special name for types that are contravariant in one
@@ -506,28 +514,6 @@ to make definining something like `Profunctor` easier)
     dimap = case instF of Sub d -> go d
       where go :: (Contravariant r (Natural t) f) => Dict (Functor s t (f a)) -> r a b -> s c d -> t (f b c) (f a d)
             go Dict f g = fmap g . lmap f
-
-## Categories and `DefaultSignatures`
-
-You might have noticed that `(->)`, `Compose`, and `CNat`, all of which have `Category` instances,
-all have identitical instances of `Functor` and `Contravariant`.  In fact, this will be true
-for any `Category`, which makes it a great opportunity to use the `DefaultSignatures` language extension:
-
-    class (Category (Cat j), Category (Cat k)) => Functor (f :: j -> k) where
-      fmap :: Cat j a b -> Cat k (f a) (f b)
-
-      default fmap :: (f ~ Cat j x, k ~ Type) => Cat j a b -> Cat j x a -> Cat j x b
-      fmap = (.)
-
-    class (Category (Cat j), Category (Cat k)) => Contravariant (f :: j -> k) where
-      contramap :: Cat j a b -> Cat k (f b) (f a)
-
-      default contramap :: (f ~ Cat j, k ~ j -> Type) => Cat j a b -> Natural (->) (f b) (f a)
-      contramap h = Natural (.h)
-
-However this doesn't compile in `ghc-8.0.2` [due to limitations in the type
-system](https://github.com/rampion/kinder-functor/issues/1), though this may be
-possible in a future version of GHC.
 
 # Literate Haskell
 
